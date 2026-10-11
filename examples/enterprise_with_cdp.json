@@ -1,0 +1,44 @@
+[
+  {
+    "name": "Segment",
+    "category": "cdp",
+    "ids": [
+      "email_hash",
+      "cookie_id",
+      "device_id",
+      "crm_contact_id"
+    ]
+  },
+  {
+    "name": "Salesforce",
+    "category": "crm",
+    "ids": [
+      "email_hash",
+      "crm_contact_id",
+      "phone"
+    ]
+  },
+  {
+    "name": "Google Analytics",
+    "category": "web_analytics",
+    "ids": [
+      "cookie_id",
+      "device_id"
+    ]
+  },
+  {
+    "name": "Meta Ads",
+    "category": "ad_platform",
+    "ids": [
+      "cookie_id",
+      "device_id"
+    ]
+  },
+  {
+    "name": "Mailchimp",
+    "category": "email_platform",
+    "ids": [
+      "email_hash"
+    ]
+  }
+]

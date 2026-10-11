@@ -1,0 +1,725 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Data-Layer Interoperability Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0b0e14;
+    --bg-elev-1: #111621;
+    --bg-elev-2: #171d2b;
+    --bg-elev-3: #1e2536;
+    --border: #262f42;
+    --border-soft: #1c2333;
+    --text-primary: #eef1f8;
+    --text-secondary: #a8b1c7;
+    --text-muted: #6b7590;
+    --accent: #6c8dff;
+    --accent-soft: rgba(108,141,255,0.14);
+    --good: #34d399;
+    --good-soft: rgba(52,211,153,0.14);
+    --warn: #fbbf24;
+    --warn-soft: rgba(251,191,36,0.14);
+    --bad: #fb7185;
+    --bad-soft: rgba(251,113,133,0.14);
+    --crit: #f43f5e;
+    --crit-soft: rgba(244,63,94,0.16);
+    --cat-cdp: #a78bfa;
+    --cat-ad: #fb923c;
+    --cat-web: #60a5fa;
+    --cat-crm: #4ade80;
+    --cat-email: #f472b6;
+    --cat-attr: #2dd4bf;
+    --shadow-lg: 0 20px 50px rgba(0,0,0,0.45);
+    --shadow-sm: 0 2px 8px rgba(0,0,0,0.3);
+    --radius: 14px;
+    --radius-sm: 9px;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  @media (prefers-color-scheme: light){
+    :root{
+      --bg: #f4f6fb;
+      --bg-elev-1: #ffffff;
+      --bg-elev-2: #ffffff;
+      --bg-elev-3: #eef1f8;
+      --border: #dde3ef;
+      --border-soft: #e7ebf3;
+      --text-primary: #131a2b;
+      --text-secondary: #4b5670;
+      --text-muted: #8792a8;
+      --accent: #3f5fe0;
+      --accent-soft: rgba(63,95,224,0.10);
+      --shadow-lg: 0 20px 50px rgba(30,40,70,0.10);
+      --shadow-sm: 0 2px 8px rgba(30,40,70,0.06);
+    }
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: radial-gradient(1200px 600px at 10% -10%, rgba(108,141,255,0.10), transparent 60%),
+                radial-gradient(900px 500px at 100% 0%, rgba(45,212,191,0.06), transparent 55%),
+                var(--bg);
+    color: var(--text-primary);
+    min-height: 100vh;
+    line-height: 1.5;
+  }
+
+  .wrap{ max-width: 1240px; margin: 0 auto; padding: 40px 24px 80px; }
+
+  /* ---------- Header ---------- */
+  header.top{
+    display:flex; justify-content: space-between; align-items: flex-start;
+    gap: 24px; margin-bottom: 28px; flex-wrap: wrap;
+  }
+  .brand{ display:flex; gap:14px; align-items:flex-start; }
+  .brand-mark{
+    width: 42px; height:42px; border-radius: 11px; flex-shrink:0;
+    background: linear-gradient(135deg, var(--accent), #8f6cff);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 6px 18px rgba(108,141,255,0.35);
+  }
+  .brand-mark svg{ width:22px; height:22px; }
+  h1{ font-size: 21px; font-weight: 800; margin:0 0 3px; letter-spacing: -0.01em; }
+  .tagline{ color: var(--text-secondary); font-size: 13.5px; max-width: 520px; margin:0; }
+  .pill{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size: 11px; font-weight:600; color: var(--text-muted);
+    border:1px solid var(--border); padding: 3px 9px 3px 7px; border-radius: 999px;
+    margin-top: 8px; letter-spacing: .02em; text-transform: uppercase;
+  }
+  .pill .dot{ width:6px; height:6px; border-radius:50%; background: var(--good); }
+
+  .examples{ display:flex; flex-direction:column; align-items:flex-end; gap:8px; }
+  .examples-label{ font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing:.05em; font-weight:600; }
+  .example-btns{ display:flex; gap:8px; flex-wrap:wrap; justify-content:flex-end; }
+
+  button{ font-family: inherit; cursor:pointer; }
+  .btn{
+    border:1px solid var(--border); background: var(--bg-elev-2); color: var(--text-primary);
+    padding: 8px 14px; border-radius: 9px; font-size: 13px; font-weight: 600;
+    transition: border-color .15s, transform .1s, background .15s;
+  }
+  .btn:hover{ border-color: var(--accent); background: var(--bg-elev-3); }
+  .btn:active{ transform: translateY(1px); }
+  .btn.primary{ background: var(--accent); border-color: var(--accent); color:#fff; }
+  .btn.primary:hover{ filter: brightness(1.08); }
+  .btn.ghost{ background: transparent; }
+  .btn.small{ padding: 6px 11px; font-size: 12px; }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; }
+  .btn:disabled:hover{ border-color: var(--border); background: var(--bg-elev-2); }
+
+  /* ---------- Layout grid ---------- */
+  .grid{
+    display:grid; grid-template-columns: 1.05fr 0.95fr; gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 900px){ .grid{ grid-template-columns: 1fr; } }
+
+  .card{
+    background: var(--bg-elev-1); border: 1px solid var(--border-soft);
+    border-radius: var(--radius); padding: 20px 22px; box-shadow: var(--shadow-sm);
+  }
+  .card + .card{ margin-top: 20px; }
+  .card h2{ font-size: 14px; margin:0 0 4px; font-weight:700; letter-spacing:-0.005em; }
+  .card .sub{ font-size:12.5px; color:var(--text-muted); margin: 0 0 16px; }
+
+  /* ---------- Builder form ---------- */
+  .field-row{ display:flex; gap:10px; margin-bottom: 12px; }
+  .field{ flex:1; min-width:0; }
+  label.flabel{ display:block; font-size:11px; font-weight:600; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase; letter-spacing:.04em; }
+  select, input[type=text]{
+    width:100%; background: var(--bg-elev-3); border:1px solid var(--border);
+    color: var(--text-primary); border-radius: 8px; padding: 9px 10px; font-size: 13.5px;
+    font-family: inherit; outline:none; transition: border-color .15s;
+  }
+  select:focus, input[type=text]:focus{ border-color: var(--accent); }
+
+  .id-grid{
+    display:grid; grid-template-columns: repeat(2, 1fr); gap: 7px 12px; margin-bottom: 14px;
+  }
+  .id-check{
+    display:flex; align-items:center; gap:8px; font-size: 12.5px; color: var(--text-secondary);
+    background: var(--bg-elev-3); border:1px solid var(--border); padding: 7px 9px; border-radius:7px;
+    cursor:pointer; user-select:none; transition: border-color .15s, color .15s;
+  }
+  .id-check:hover{ border-color: var(--accent); color: var(--text-primary); }
+  .id-check input{ accent-color: var(--accent); width:14px; height:14px; }
+  .id-check.checked{ border-color: var(--accent); color: var(--text-primary); background: var(--accent-soft); }
+
+  /* ---------- Tool list ---------- */
+  #toolList{ display:flex; flex-direction:column; gap:9px; margin-top: 4px; }
+  .tool-card{
+    display:flex; align-items:center; gap:12px; padding: 10px 12px;
+    background: var(--bg-elev-2); border:1px solid var(--border-soft); border-radius: 10px;
+  }
+  .cat-dot{ width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .tool-info{ flex:1; min-width:0; }
+  .tool-name{ font-size:13.5px; font-weight:600; }
+  .tool-meta{ font-size:11.5px; color: var(--text-muted); margin-top:2px; }
+  .chip{
+    display:inline-block; font-size:10.5px; padding:1.5px 6px; border-radius:5px;
+    background: var(--bg-elev-3); border:1px solid var(--border); color: var(--text-secondary);
+    margin: 2px 4px 0 0; font-family: 'JetBrains Mono', monospace;
+  }
+  .icon-btn{
+    width:26px; height:26px; border-radius:7px; border:1px solid var(--border);
+    background: var(--bg-elev-3); color: var(--text-muted); display:flex; align-items:center;
+    justify-content:center; flex-shrink:0; transition: all .15s;
+  }
+  .icon-btn:hover{ color: var(--bad); border-color: var(--bad); }
+  .empty-state{ color: var(--text-muted); font-size: 13px; text-align:center; padding: 26px 10px; border: 1px dashed var(--border); border-radius: 10px; }
+
+  /* ---------- Score ---------- */
+  .score-wrap{ display:flex; align-items:center; gap:22px; }
+  .gauge{ position:relative; width:132px; height:132px; flex-shrink:0; }
+  .gauge svg{ transform: rotate(-90deg); }
+  .gauge-center{ position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .gauge-num{ font-size: 30px; font-weight:800; line-height:1; font-family:'JetBrains Mono', monospace; }
+  .gauge-den{ font-size: 10px; color: var(--text-muted); margin-top:2px; }
+  .score-info{ flex:1; }
+  .score-label{ font-size: 16px; font-weight:700; margin-bottom:4px; }
+  .score-desc{ font-size: 12.5px; color: var(--text-secondary); line-height:1.55; }
+
+  /* ---------- Flags ---------- */
+  .flag{
+    display:flex; gap:10px; padding: 11px 12px; border-radius: 10px; border:1px solid var(--border-soft);
+    background: var(--bg-elev-2); margin-bottom: 9px; font-size: 13px; line-height:1.5;
+  }
+  .flag:last-child{ margin-bottom:0; }
+  .flag-icon{ flex-shrink:0; width:20px; height:20px; margin-top:1px; }
+  .flag.critical{ border-color: rgba(244,63,94,0.35); background: var(--crit-soft); }
+  .flag.warning{ border-color: rgba(251,191,36,0.30); background: var(--warn-soft); }
+  .flag.info{ border-color: rgba(108,141,255,0.28); background: var(--accent-soft); }
+  .flag.good{ border-color: rgba(52,211,153,0.30); background: var(--good-soft); }
+  .flag b{ font-weight:700; }
+
+  /* ---------- Diagram ---------- */
+  .diagram-card{ margin-top:20px; }
+  .legend{ display:flex; flex-wrap:wrap; gap: 14px 18px; margin-bottom: 14px; }
+  .legend-item{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-secondary); }
+  .legend-swatch{ width:10px; height:10px; border-radius:50%; }
+  .legend-item.isolated .legend-swatch{ background:none; border: 2px dashed var(--crit); }
+
+  #diagramHost{ width:100%; overflow-x:auto; }
+  #diagramHost svg{ display:block; margin: 0 auto; }
+  .node-label{ font-size: 11px; font-weight:600; fill: var(--text-primary); font-family:'Inter',sans-serif; }
+  .node-sub{ font-size: 8.5px; fill: var(--text-muted); font-family:'Inter',sans-serif; }
+  .edge-label{ font-size: 8.5px; fill: var(--text-muted); font-family:'JetBrains Mono', monospace; }
+
+  footer{ text-align:center; color: var(--text-muted); font-size: 12px; margin-top: 44px; }
+  footer a{ color: var(--text-secondary); }
+
+  @media (max-width: 560px){
+    .field-row{ flex-direction:column; }
+    .id-grid{ grid-template-columns: 1fr 1fr; }
+    header.top{ flex-direction:column; }
+    .examples{ align-items:flex-start; }
+    .example-btns{ justify-content:flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="6" cy="6" r="3" stroke="white" stroke-width="1.6"/>
+          <circle cx="18" cy="6" r="3" stroke="white" stroke-width="1.6"/>
+          <circle cx="12" cy="18" r="3" stroke="white" stroke-width="1.6"/>
+          <path d="M8.6 7.6L15.4 7.6M9 9L11 15M15 9L13 15" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Data-Layer Interoperability Checker</h1>
+        <p class="tagline">Describe your martech stack, see where identity resolution actually breaks — no audit, no integration, five minutes.</p>
+        <span class="pill"><span class="dot"></span>Self-report · nothing leaves your browser</span>
+      </div>
+    </div>
+    <div class="examples">
+      <span class="examples-label">Load an example stack</span>
+      <div class="example-btns">
+        <button class="btn small" onclick="loadExample('ecom')">Lean E-commerce</button>
+        <button class="btn small" onclick="loadExample('enterprise')">Enterprise w/ CDP</button>
+        <button class="btn small" onclick="loadExample('nocdp')">SaaS, No Owner</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="grid">
+    <!-- LEFT: builder + list -->
+    <div>
+      <div class="card">
+        <h2>Add a tool to your stack</h2>
+        <p class="sub">Pick a category, name it, check which identifiers it tracks people by.</p>
+
+        <div class="field-row">
+          <div class="field">
+            <label class="flabel">Category</label>
+            <select id="catInput">
+              <option value="cdp">CDP</option>
+              <option value="ad_platform">Ad Platform</option>
+              <option value="web_analytics">Web Analytics</option>
+              <option value="crm">CRM</option>
+              <option value="email_platform">Email Platform</option>
+              <option value="attribution">Attribution Tool</option>
+            </select>
+          </div>
+          <div class="field">
+            <label class="flabel">Tool name</label>
+            <input type="text" id="nameInput" placeholder="e.g. Segment, HubSpot, Meta Ads…" maxlength="30" />
+          </div>
+        </div>
+
+        <label class="flabel">Identifiers it uses</label>
+        <div class="id-grid" id="idGrid"></div>
+
+        <button class="btn primary" id="addBtn" onclick="addTool()">+ Add tool to stack</button>
+      </div>
+
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2px;">
+          <h2 style="margin-bottom:0;">Your stack <span id="toolCount" style="color:var(--text-muted); font-weight:500;"></span></h2>
+          <button class="btn ghost small" onclick="clearAll()">Clear all</button>
+        </div>
+        <p class="sub">Every tool you add updates the score and diagram live.</p>
+        <div id="toolList"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: score + flags -->
+    <div>
+      <div class="card">
+        <h2>Identity Fragmentation Score</h2>
+        <p class="sub">How disconnected your identifiers are across the stack — lower is better.</p>
+        <div class="score-wrap">
+          <div class="gauge">
+            <svg width="132" height="132" viewBox="0 0 132 132">
+              <circle cx="66" cy="66" r="56" fill="none" stroke="var(--bg-elev-3)" stroke-width="12"/>
+              <circle id="gaugeArc" cx="66" cy="66" r="56" fill="none" stroke="var(--good)" stroke-width="12"
+                stroke-linecap="round" stroke-dasharray="352" stroke-dashoffset="352"
+                style="transition: stroke-dashoffset .5s ease, stroke .5s ease;"/>
+            </svg>
+            <div class="gauge-center">
+              <div class="gauge-num" id="scoreNum">–</div>
+              <div class="gauge-den">/ 100</div>
+            </div>
+          </div>
+          <div class="score-info">
+            <div class="score-label" id="scoreLabel">No tools yet</div>
+            <div class="score-desc" id="scoreDesc">Add at least two tools to compute a fragmentation score.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Flags</h2>
+        <p class="sub">Specific issues found in your stack, most severe first.</p>
+        <div id="flagsList"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card diagram-card">
+    <h2>Identity graph</h2>
+    <p class="sub">Tools are nodes, shared identifiers are edges. Isolated nodes (dashed red ring) share no identifier with anything else.</p>
+    <div class="legend" id="legend"></div>
+    <div id="diagramHost"></div>
+  </div>
+
+  <footer>Manual self-report only — nothing here connects to real CDPs, ad accounts, or CRMs. Built for a five-minute gut-check, not an audit.</footer>
+</div>
+
+<script>
+/* ---------------- Config ---------------- */
+const CATEGORIES = {
+  cdp:            { label: 'CDP',              color: 'var(--cat-cdp)',  webish: true  },
+  ad_platform:    { label: 'Ad Platform',       color: 'var(--cat-ad)',   webish: true  },
+  web_analytics:  { label: 'Web Analytics',     color: 'var(--cat-web)', webish: true  },
+  crm:            { label: 'CRM',               color: 'var(--cat-crm)', webish: false },
+  email_platform: { label: 'Email Platform',    color: 'var(--cat-email)', webish: false },
+  attribution:    { label: 'Attribution Tool',  color: 'var(--cat-attr)', webish: true  },
+};
+
+const IDENTIFIERS = {
+  email_hash:     'Email Hash',
+  cookie_id:      'Cookie ID',
+  device_id:      'Device ID',
+  phone:          'Phone Number',
+  crm_contact_id: 'CRM Contact ID',
+  ip_address:     'IP Address',
+};
+
+const EXAMPLES = {
+  ecom: [
+    { name: 'Shopify',    category: 'crm',            ids: ['email_hash','phone','crm_contact_id'] },
+    { name: 'Meta Ads',   category: 'ad_platform',    ids: ['cookie_id','device_id'] },
+    { name: 'Google Ads', category: 'ad_platform',    ids: ['cookie_id','device_id'] },
+    { name: 'Klaviyo',    category: 'email_platform', ids: ['email_hash','crm_contact_id'] },
+  ],
+  enterprise: [
+    { name: 'Segment',        category: 'cdp',            ids: ['email_hash','cookie_id','device_id','crm_contact_id'] },
+    { name: 'Salesforce',     category: 'crm',            ids: ['email_hash','crm_contact_id','phone'] },
+    { name: 'Google Analytics', category: 'web_analytics', ids: ['cookie_id','device_id'] },
+    { name: 'Meta Ads',       category: 'ad_platform',    ids: ['cookie_id','device_id'] },
+    { name: 'Mailchimp',      category: 'email_platform', ids: ['email_hash'] },
+  ],
+  nocdp: [
+    { name: 'HubSpot',      category: 'crm',           ids: ['crm_contact_id','email_hash'] },
+    { name: 'Google Ads',   category: 'ad_platform',   ids: ['cookie_id','device_id'] },
+    { name: 'Facebook Ads', category: 'ad_platform',   ids: ['cookie_id','device_id','phone'] },
+    { name: 'Mixpanel',     category: 'web_analytics', ids: ['device_id','cookie_id'] },
+    { name: 'Triple Whale', category: 'attribution',   ids: ['cookie_id','device_id'] },
+  ],
+};
+
+/* ---------------- State ---------------- */
+let tools = [];      // { id, name, category, ids: [] }
+let nextId = 1;
+let selectedIds = new Set();
+
+/* ---------------- Build identifier checkboxes ---------------- */
+const idGrid = document.getElementById('idGrid');
+Object.entries(IDENTIFIERS).forEach(([key, label]) => {
+  const wrap = document.createElement('label');
+  wrap.className = 'id-check';
+  wrap.dataset.key = key;
+  wrap.innerHTML = `<input type="checkbox" value="${key}"/> ${label}`;
+  wrap.addEventListener('click', (e) => {
+    e.preventDefault();
+    if (selectedIds.has(key)) { selectedIds.delete(key); wrap.classList.remove('checked'); wrap.querySelector('input').checked = false; }
+    else { selectedIds.add(key); wrap.classList.add('checked'); wrap.querySelector('input').checked = true; }
+  });
+  idGrid.appendChild(wrap);
+});
+
+/* ---------------- Add / remove tools ---------------- */
+function addTool(){
+  const name = document.getElementById('nameInput').value.trim();
+  const category = document.getElementById('catInput').value;
+  if (!name){ document.getElementById('nameInput').focus(); return; }
+  if (selectedIds.size === 0){ return; }
+  tools.push({ id: nextId++, name, category, ids: Array.from(selectedIds) });
+  document.getElementById('nameInput').value = '';
+  selectedIds.clear();
+  idGrid.querySelectorAll('.id-check').forEach(el => { el.classList.remove('checked'); el.querySelector('input').checked = false; });
+  document.getElementById('nameInput').focus();
+  renderAll();
+}
+
+function removeTool(id){
+  tools = tools.filter(t => t.id !== id);
+  renderAll();
+}
+
+function clearAll(){
+  tools = [];
+  renderAll();
+}
+
+function loadExample(key){
+  tools = EXAMPLES[key].map(t => ({ id: nextId++, name: t.name, category: t.category, ids: t.ids.slice() }));
+  renderAll();
+}
+
+/* ---------------- Graph + scoring ---------------- */
+function buildGraph(){
+  const n = tools.length;
+  const adj = Array.from({length:n}, () => new Set());
+  const edges = []; // {a,b,shared:[]}
+  for (let i=0;i<n;i++){
+    for (let j=i+1;j<n;j++){
+      const shared = tools[i].ids.filter(id => tools[j].ids.includes(id));
+      if (shared.length){
+        adj[i].add(j); adj[j].add(i);
+        edges.push({a:i, b:j, shared});
+      }
+    }
+  }
+  // connected components
+  const seen = new Array(n).fill(false);
+  const components = [];
+  for (let i=0;i<n;i++){
+    if (seen[i]) continue;
+    const stack=[i]; const comp=[];
+    seen[i]=true;
+    while(stack.length){
+      const cur = stack.pop(); comp.push(cur);
+      adj[cur].forEach(nb => { if(!seen[nb]){ seen[nb]=true; stack.push(nb); } });
+    }
+    components.push(comp);
+  }
+  return { adj, edges, components };
+}
+
+function computeScore(graph){
+  const n = tools.length;
+  if (n < 2) return { score: 0, ready:false };
+
+  const { adj, components } = graph;
+  const isolated = tools.map((_, i) => adj[i].size === 0);
+  const isolatedCount = isolated.filter(Boolean).length;
+
+  const componentFrag = ((components.length - 1) / Math.max(1, n - 1)) * 50;
+  const isolationPenalty = (isolatedCount / n) * 30;
+
+  const maxDegree = Math.max(...tools.map((_, i) => adj[i].size));
+  const hasUniversalHub = maxDegree === n - 1;
+  const maxDegreeRatio = maxDegree / (n - 1);
+  const ownershipPenalty = hasUniversalHub ? 0 : (maxDegreeRatio >= 0.7 ? 10 : 20);
+
+  const score = Math.max(0, Math.min(100, Math.round(componentFrag + isolationPenalty + ownershipPenalty)));
+  return { score, ready:true, isolated, isolatedCount, components, hasUniversalHub, maxDegreeRatio };
+}
+
+function scoreLabelFor(score){
+  if (score <= 25) return { text: 'Low fragmentation', color: 'var(--good)' };
+  if (score <= 50) return { text: 'Moderate fragmentation', color: 'var(--warn)' };
+  if (score <= 75) return { text: 'High fragmentation', color: 'var(--bad)' };
+  return { text: 'Severe fragmentation', color: 'var(--crit)' };
+}
+
+/* ---------------- Flags ---------------- */
+function buildFlags(graph, scoring){
+  const flags = [];
+  const n = tools.length;
+
+  if (n === 0){
+    flags.push({ level:'info', text: 'Add a tool — or load an example stack above — to get started.' });
+    return flags;
+  }
+  if (n === 1){
+    flags.push({ level:'info', text: 'Add at least one more tool to see how identifiers connect across your stack.' });
+    return flags;
+  }
+
+  const { adj, components } = graph;
+
+  // 1. Isolated nodes
+  tools.forEach((t, i) => {
+    if (adj[i].size === 0){
+      flags.push({ level:'critical', text: `<b>${esc(t.name)}</b> isn't sharing any identifier with the rest of your stack — its data is fully siloed.` });
+    }
+  });
+
+  // 2. Web-behavior tools with no shared identifier between them
+  const webIdx = tools.map((t,i)=>i).filter(i => CATEGORIES[tools[i].category].webish);
+  const disconnectedWeb = webIdx.filter(i => {
+    // no edge to another web-behavior tool
+    return ![...adj[i]].some(j => CATEGORIES[tools[j].category].webish);
+  });
+  if (webIdx.length >= 2 && disconnectedWeb.length >= 2){
+    const names = disconnectedWeb.map(i => tools[i].name).join(', ');
+    flags.push({ level:'critical', text: `<b>${disconnectedWeb.length} tools</b> are tracking web behavior (${esc(names)}) with no shared identifier between them — likely duplicate or conflicting attribution.` });
+  }
+
+  // 3. Identity ownership
+  if (!scoring.hasUniversalHub){
+    const cdpIdx = tools.findIndex(t => t.category === 'cdp');
+    if (cdpIdx !== -1){
+      flags.push({ level:'warning', text: `Your CDP <b>${esc(tools[cdpIdx].name)}</b> isn't sharing an identifier with every tool in the stack — data may not actually be unified despite having a CDP.` });
+    } else {
+      flags.push({ level:'warning', text: `No tool in your stack owns identity resolution — nothing is designed to stitch identities across platforms.` });
+    }
+  } else {
+    const hub = tools[[...Array(n).keys()].find(i => adj[i].size === n-1)];
+    flags.push({ level:'good', text: `<b>${esc(hub.name)}</b> connects to every other tool — it's acting as your identity resolution hub.` });
+  }
+
+  // 4. Disconnected clusters
+  if (components.length > 1){
+    const desc = components.map(c => c.map(i => tools[i].name).join(' + ')).join('  |  ');
+    flags.push({ level:'critical', text: `Your stack splits into <b>${components.length} disconnected identity clusters</b>: ${esc(desc)}.` });
+  }
+
+  // 5. Identifier diversity
+  const allIds = new Set();
+  tools.forEach(t => t.ids.forEach(id => allIds.add(id)));
+  if (allIds.size >= 4 && !scoring.hasUniversalHub){
+    const list = Array.from(allIds).map(id => IDENTIFIERS[id]).join(', ');
+    flags.push({ level:'warning', text: `<b>${allIds.size} different identifier schemes</b> in play (${esc(list)}) with no single resolution key connecting them all.` });
+  }
+
+  // 6. CRM/Email vs Ad platform
+  const crmEmailIdx = tools.map((t,i)=>i).filter(i => ['crm','email_platform'].includes(tools[i].category));
+  const adIdx = tools.map((t,i)=>i).filter(i => tools[i].category === 'ad_platform');
+  if (crmEmailIdx.length && adIdx.length){
+    // Linked = reachable through the identity graph (e.g. via a CDP), not only a direct shared identifier.
+    const compOf = {};
+    components.forEach((c, k) => c.forEach(i => { compOf[i] = k; }));
+    const anyLink = crmEmailIdx.some(i => adIdx.some(j => compOf[i] === compOf[j]));
+    if (!anyLink){
+      const crmNames = crmEmailIdx.map(i=>tools[i].name).join(', ');
+      const adNames = adIdx.map(i=>tools[i].name).join(', ');
+      flags.push({ level:'critical', text: `Customer data in <b>${esc(crmNames)}</b> isn't connected to your ad platforms (${esc(adNames)}) — conversion/LTV data likely isn't feeding back into ad optimization.` });
+    }
+  }
+
+  if (flags.length === 0){
+    flags.push({ level:'good', text: 'No major fragmentation issues detected across the tools you\'ve entered.' });
+  }
+
+  return flags;
+}
+
+function esc(s){ return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+const FLAG_ICONS = {
+  critical: '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill="var(--crit)" opacity="0.18"/><path d="M10 6v5M10 13.5v.01" stroke="var(--crit)" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  warning:  '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill="var(--warn)" opacity="0.18"/><path d="M10 6v5M10 13.5v.01" stroke="var(--warn)" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  info:     '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill="var(--accent)" opacity="0.18"/><path d="M10 9v4.2M10 6.3v.01" stroke="var(--accent)" stroke-width="1.8" stroke-linecap="round"/></svg>',
+  good:     '<svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill="var(--good)" opacity="0.18"/><path d="M6.5 10.3l2.4 2.4 4.6-5.2" stroke="var(--good)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+};
+
+/* ---------------- Diagram ---------------- */
+function renderDiagram(graph){
+  const host = document.getElementById('diagramHost');
+  const n = tools.length;
+  if (n === 0){
+    host.innerHTML = `<div class="empty-state">Your identity graph will appear here once you add tools.</div>`;
+    return;
+  }
+
+  const w = Math.max(560, Math.min(920, 200 + n*90));
+  const h = 380;
+  const cx = w/2, cy = h/2 - 6;
+  const r = Math.min(w, h)/2 - 70;
+
+  const pos = tools.map((_, i) => {
+    const angle = (2*Math.PI*i)/n - Math.PI/2;
+    return { x: cx + r*Math.cos(angle), y: cy + r*Math.sin(angle) };
+  });
+
+  let svg = `<svg viewBox="0 0 ${w} ${h}" width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">`;
+
+  // edges
+  graph.edges.forEach(e => {
+    const p1 = pos[e.a], p2 = pos[e.b];
+    const mx = (p1.x+p2.x)/2, my = (p1.y+p2.y)/2;
+    const width = 1 + e.shared.length * 1.1;
+    const label = e.shared.map(id => IDENTIFIERS[id]).join(', ');
+    svg += `<line x1="${p1.x}" y1="${p1.y}" x2="${p2.x}" y2="${p2.y}" stroke="var(--accent)" stroke-opacity="0.55" stroke-width="${width}">
+      <title>${esc(tools[e.a].name)} ↔ ${esc(tools[e.b].name)}: ${esc(label)}</title>
+    </line>`;
+    svg += `<rect x="${mx-3}" y="${my-3}" width="6" height="6" fill="var(--bg-elev-1)" opacity="0"/>`;
+  });
+
+  // nodes
+  tools.forEach((t, i) => {
+    const p = pos[i];
+    const color = CATEGORIES[t.category].color;
+    const isolated = graph.adj[i].size === 0;
+    const label = t.name.length > 14 ? t.name.slice(0,13)+'…' : t.name;
+    svg += `<g>
+      ${isolated ? `<circle cx="${p.x}" cy="${p.y}" r="26" fill="none" stroke="var(--crit)" stroke-width="2" stroke-dasharray="4 3"/>` : ''}
+      <circle cx="${p.x}" cy="${p.y}" r="20" fill="${color}" fill-opacity="0.22" stroke="${color}" stroke-width="2">
+        <title>${esc(t.name)} — ${esc(CATEGORIES[t.category].label)}\n${t.ids.map(id=>IDENTIFIERS[id]).join(', ')}</title>
+      </circle>
+      <text x="${p.x}" y="${p.y+4}" text-anchor="middle" class="node-sub" font-size="9">${esc(CATEGORIES[t.category].label.split(' ')[0])}</text>
+      <text x="${p.x}" y="${p.y+38}" text-anchor="middle" class="node-label">${esc(label)}</text>
+    </g>`;
+  });
+
+  svg += `</svg>`;
+  host.innerHTML = svg;
+}
+
+function renderLegend(){
+  const legend = document.getElementById('legend');
+  let html = Object.values(CATEGORIES).map(c =>
+    `<div class="legend-item"><span class="legend-swatch" style="background:${c.color}"></span>${c.label}</div>`
+  ).join('');
+  html += `<div class="legend-item isolated"><span class="legend-swatch"></span>Isolated / siloed</div>`;
+  legend.innerHTML = html;
+}
+
+/* ---------------- Render: tool list ---------------- */
+function renderToolList(){
+  const list = document.getElementById('toolList');
+  document.getElementById('toolCount').textContent = tools.length ? `(${tools.length})` : '';
+  if (!tools.length){
+    list.innerHTML = `<div class="empty-state">No tools yet. Add one above, or load an example stack.</div>`;
+    return;
+  }
+  list.innerHTML = tools.map(t => `
+    <div class="tool-card">
+      <span class="cat-dot" style="background:${CATEGORIES[t.category].color}"></span>
+      <div class="tool-info">
+        <div class="tool-name">${esc(t.name)} <span style="color:var(--text-muted); font-weight:500;">· ${esc(CATEGORIES[t.category].label)}</span></div>
+        <div class="tool-meta">${t.ids.map(id => `<span class="chip">${esc(IDENTIFIERS[id])}</span>`).join('')}</div>
+      </div>
+      <button class="icon-btn" onclick="removeTool(${t.id})" title="Remove ${esc(t.name)}">
+        <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M2 2L12 12M12 2L2 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  `).join('');
+}
+
+/* ---------------- Render: score ---------------- */
+const CIRC = 2 * Math.PI * 56;
+function renderScore(scoring){
+  const arc = document.getElementById('gaugeArc');
+  const numEl = document.getElementById('scoreNum');
+  const labelEl = document.getElementById('scoreLabel');
+  const descEl = document.getElementById('scoreDesc');
+
+  if (!scoring.ready){
+    arc.style.strokeDashoffset = CIRC;
+    arc.style.stroke = 'var(--border)';
+    numEl.textContent = '–';
+    labelEl.textContent = tools.length === 0 ? 'No tools yet' : 'Add one more tool';
+    descEl.textContent = 'Add at least two tools to compute a fragmentation score.';
+    return;
+  }
+
+  const { score } = scoring;
+  const { text, color } = scoreLabelFor(score);
+  const offset = CIRC - (score/100)*CIRC;
+  arc.style.strokeDashoffset = offset;
+  arc.style.stroke = color;
+  numEl.textContent = score;
+  numEl.style.color = color;
+  labelEl.textContent = text;
+  labelEl.style.color = color;
+
+  const bits = [];
+  if (scoring.isolatedCount) bits.push(`${scoring.isolatedCount} isolated tool${scoring.isolatedCount>1?'s':''}`);
+  if (scoring.components.length > 1) bits.push(`${scoring.components.length} disconnected clusters`);
+  bits.push(scoring.hasUniversalHub ? 'one tool resolves identity across the whole stack' : 'no single tool resolves identity across the whole stack');
+  descEl.textContent = bits.join(' · ') + '.';
+}
+
+/* ---------------- Render: flags ---------------- */
+function renderFlags(graph, scoring){
+  const el = document.getElementById('flagsList');
+  const flags = buildFlags(graph, scoring.ready ? scoring : { hasUniversalHub:false });
+  el.innerHTML = flags.map(f => `
+    <div class="flag ${f.level}">
+      <span class="flag-icon">${FLAG_ICONS[f.level]}</span>
+      <span>${f.text}</span>
+    </div>
+  `).join('');
+}
+
+/* ---------------- Master render ---------------- */
+function renderAll(){
+  const graph = buildGraph();
+  const scoring = computeScore(graph);
+  renderToolList();
+  renderScore(scoring);
+  renderFlags(graph, scoring);
+  renderDiagram(graph);
+}
+
+renderLegend();
+renderAll();
+</script>
+</body>
+</html>

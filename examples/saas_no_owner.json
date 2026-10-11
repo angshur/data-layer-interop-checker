@@ -1,0 +1,43 @@
+[
+  {
+    "name": "HubSpot",
+    "category": "crm",
+    "ids": [
+      "crm_contact_id",
+      "email_hash"
+    ]
+  },
+  {
+    "name": "Google Ads",
+    "category": "ad_platform",
+    "ids": [
+      "cookie_id",
+      "device_id"
+    ]
+  },
+  {
+    "name": "Facebook Ads",
+    "category": "ad_platform",
+    "ids": [
+      "cookie_id",
+      "device_id",
+      "phone"
+    ]
+  },
+  {
+    "name": "Mixpanel",
+    "category": "web_analytics",
+    "ids": [
+      "device_id",
+      "cookie_id"
+    ]
+  },
+  {
+    "name": "Triple Whale",
+    "category": "attribution",
+    "ids": [
+      "cookie_id",
+      "device_id"
+    ]
+  }
+]

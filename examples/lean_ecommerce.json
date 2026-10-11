@@ -1,0 +1,35 @@
+[
+  {
+    "name": "Shopify",
+    "category": "crm",
+    "ids": [
+      "email_hash",
+      "phone",
+      "crm_contact_id"
+    ]
+  },
+  {
+    "name": "Meta Ads",
+    "category": "ad_platform",
+    "ids": [
+      "cookie_id",
+      "device_id"
+    ]
+  },
+  {
+    "name": "Google Ads",
+    "category": "ad_platform",
+    "ids": [
+      "cookie_id",
+      "device_id"
+    ]
+  },
+  {
+    "name": "Klaviyo",
+    "category": "email_platform",
+    "ids": [
+      "email_hash",
+      "crm_contact_id"
+    ]
+  }
+]
